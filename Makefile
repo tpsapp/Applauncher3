@@ -10,11 +10,11 @@ build-frontend:
 
 build:
 	mkdir -p $(OUTPUT_DIR)
-	go build -tags webkit2_41 -o $(OUTPUT_DIR)/$(BINARY_NAME) main.go app.go
+	go build -tags "production,webkit2_41" -o $(OUTPUT_DIR)/$(BINARY_NAME) main.go app.go
 
 build-windows: build-frontend
 	mkdir -p $(OUTPUT_DIR)
-	GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -ldflags "-H windowsgui" -o $(OUTPUT_DIR)/$(BINARY_NAME).exe main.go app.go
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=1 go build -tags "production" -ldflags "-H windowsgui" -o $(OUTPUT_DIR)/$(BINARY_NAME).exe main.go app.go
 
 test:
 	go test -v ./...
