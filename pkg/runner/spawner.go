@@ -12,8 +12,13 @@ var (
 	ErrPathNotFound      = errors.New("executable path not found")
 )
 
+type SpawnResult struct {
+	PID  int
+	Wait func() error
+}
+
 type ProcessSpawner interface {
-	Spawn(item *models.LaunchItem) (int, error)
+	Spawn(item *models.LaunchItem) (*SpawnResult, error)
 }
 
 func checkWorkingDirectory(dir string) error {

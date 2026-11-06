@@ -18,12 +18,12 @@ func TestTC_SPW_01_HappyPath_Spawn(t *testing.T) {
 		Arguments: []string{"-c", "sleep 0.1"},
 	}
 
-	pid, err := spawner.Spawn(item)
+	res, err := spawner.Spawn(item)
 	if err != nil {
 		t.Fatalf("Spawn failed: %v", err)
 	}
-	if pid <= 0 {
-		t.Errorf("Expected positive PID, got %d", pid)
+	if res.PID <= 0 {
+		t.Errorf("Expected positive PID, got %d", res.PID)
 	}
 }
 
@@ -34,20 +34,20 @@ func TestTC_SPW_02_DetachedOrphan_Survival(t *testing.T) {
 		Arguments: []string{"-c", "sleep 2"},
 	}
 
-	pid, err := spawner.Spawn(item)
+	res, err := spawner.Spawn(item)
 	if err != nil {
 		t.Fatalf("Spawn failed: %v", err)
 	}
 
 	// Verify child process is active and running independently
-	process, err := os.FindProcess(pid)
+	process, err := os.FindProcess(res.PID)
 	if err != nil {
 		t.Fatalf("Failed to find process: %v", err)
 	}
 
 	// Sending signal 0 checks process existence without killing it
 	if err := process.Signal(syscall.Signal(0)); err != nil {
-		t.Errorf("Process %d is not running: %v", pid, err)
+		t.Errorf("Process %d is not running: %v", res.PID, err)
 	}
 
 	// Cleanup
@@ -95,7 +95,7 @@ func TestTC_SPW_05_CustomWorkingDirectory(t *testing.T) {
 		WorkingDirectory: tmpDir,
 	}
 
-	pid, err := spawner.Spawn(item)
+	res, err := spawner.Spawn(item)
 	if err != nil {
 		t.Fatalf("Spawn failed: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestTC_SPW_05_CustomWorkingDirectory(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	if _, err := os.Stat(markerFile); os.IsNotExist(err) {
-		t.Errorf("Expected marker.txt in working directory %s for PID %d", tmpDir, pid)
+		t.Errorf("Expected marker.txt in working directory %s for PID %d", tmpDir, res.PID)
 	}
 }
 

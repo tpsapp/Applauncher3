@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -175,9 +176,10 @@ func (e *Engine) Start(ctx context.Context, profile models.Profile, dryRun bool,
 		})
 
 		// Spawning attempt
+		var spawnRes *SpawnResult
 		var spawnErr error
 		if !dryRun {
-			_, spawnErr = e.spawner.Spawn(&item)
+			spawnRes, spawnErr = e.spawner.Spawn(&item)
 		}
 
 		itemStatus := "Success"
@@ -185,6 +187,53 @@ func (e *Engine) Start(ctx context.Context, profile models.Profile, dryRun bool,
 		if spawnErr != nil {
 			itemStatus = "Failed"
 			errMsg = spawnErr.Error()
+		} else if !dryRun {
+			// Advanced Condition 1: Wait for process exit (blocking mode)
+			if item.WaitForExit && spawnRes != nil && spawnRes.Wait != nil {
+				e.emitProgress(onProgress, ProgressEvent{
+					CurrentIndex: i,
+					TotalItems:   total,
+					CurrentItem:  item,
+					ItemStatus:   "WaitingForExit",
+					State:        StateRunning,
+				})
+
+				waitChan := make(chan error, 1)
+				go func() {
+					waitChan <- spawnRes.Wait()
+				}()
+
+				select {
+				case <-runCtx.Done():
+					return runCtx.Err()
+				case waitErr := <-waitChan:
+					if waitErr != nil {
+						itemStatus = "Failed"
+						errMsg = fmt.Sprintf("Process exited with error: %v", waitErr)
+					}
+				}
+			}
+
+			// Advanced Condition 2: TCP Port Health Check Probe
+			if item.TCPPortProbe > 0 && itemStatus != "Failed" {
+				e.emitProgress(onProgress, ProgressEvent{
+					CurrentIndex: i,
+					TotalItems:   total,
+					CurrentItem:  item,
+					ItemStatus:   "ProbingPort",
+					State:        StateRunning,
+				})
+
+				timeout := time.Duration(item.ProbeTimeoutSeconds * float64(time.Second))
+				if timeout <= 0 {
+					timeout = 10 * time.Second
+				}
+
+				if probeErr := ProbeTCPPort(runCtx, item.TCPPortProbe, timeout, 100*time.Millisecond); probeErr != nil {
+					itemStatus = "Failed"
+					errMsg = probeErr.Error()
+				}
+			}
 		}
 
 		e.emitProgress(onProgress, ProgressEvent{

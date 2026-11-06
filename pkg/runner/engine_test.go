@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 	"errors"
+	"net"
 	"sync"
 	"testing"
 	"time"
@@ -14,16 +15,26 @@ type MockSpawner struct {
 	mu           sync.Mutex
 	spawnedItems []string
 	failOnItem   string
+	waitFuncs    map[string]func() error
 }
 
-func (m *MockSpawner) Spawn(item *models.LaunchItem) (int, error) {
+func (m *MockSpawner) Spawn(item *models.LaunchItem) (*SpawnResult, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.spawnedItems = append(m.spawnedItems, item.ID)
 	if m.failOnItem != "" && item.ID == m.failOnItem {
-		return 0, errors.New("synthetic spawn failure")
+		return nil, errors.New("synthetic spawn failure")
 	}
-	return 1000 + len(m.spawnedItems), nil
+
+	waitFn := func() error { return nil }
+	if m.waitFuncs != nil && m.waitFuncs[item.ID] != nil {
+		waitFn = m.waitFuncs[item.ID]
+	}
+
+	return &SpawnResult{
+		PID:  1000 + len(m.spawnedItems),
+		Wait: waitFn,
+	}, nil
 }
 
 func TestTC_QUE_01_HappyPath_SequentialExecution(t *testing.T) {
@@ -213,4 +224,135 @@ func TestTC_QUE_06_ConcurrencyUnderRaceDetector(t *testing.T) {
 	}()
 
 	wg.Wait()
+}
+
+func TestTC_QUE_07_WaitForExit_BlockingMode(t *testing.T) {
+	exitHeld := true
+	mock := &MockSpawner{
+		waitFuncs: map[string]func() error{
+			"blocking-item": func() error {
+				time.Sleep(100 * time.Millisecond)
+				exitHeld = false
+				return nil
+			},
+		},
+	}
+	engine := NewEngine(mock)
+
+	profile := models.Profile{
+		Name: "BlockingProfile",
+		Items: []models.LaunchItem{
+			{ID: "blocking-item", Name: "Blocking Item", Path: "/bin/sleep", WaitForExit: true, DelaySeconds: 0.01, Enabled: true},
+			{ID: "next-item", Name: "Next Item", Path: "/bin/echo", DelaySeconds: 0.01, Enabled: true},
+		},
+	}
+
+	waitingEventSeen := false
+	err := engine.Start(context.Background(), profile, false, func(evt ProgressEvent) {
+		if evt.CurrentItem.ID == "blocking-item" && evt.ItemStatus == "WaitingForExit" {
+			waitingEventSeen = true
+		}
+	})
+
+	if err != nil {
+		t.Fatalf("Engine start failed: %v", err)
+	}
+
+	if !waitingEventSeen {
+		t.Errorf("Expected 'WaitingForExit' status event")
+	}
+	if exitHeld {
+		t.Errorf("Expected blocking wait to complete before queue finished")
+	}
+}
+
+func TestTC_QUE_08_TCPPortProbe_Success(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	defer listener.Close()
+
+	port := listener.Addr().(*net.TCPAddr).Port
+
+	mock := &MockSpawner{}
+	engine := NewEngine(mock)
+
+	profile := models.Profile{
+		Name: "ProbeProfile",
+		Items: []models.LaunchItem{
+			{
+				ID:                  "probe-item",
+				Name:                "Backend Service",
+				Path:                "/bin/echo",
+				TCPPortProbe:        port,
+				ProbeTimeoutSeconds: 2.0,
+				DelaySeconds:        0.01,
+				Enabled:             true,
+			},
+		},
+	}
+
+	probingEventSeen := false
+	err = engine.Start(context.Background(), profile, false, func(evt ProgressEvent) {
+		if evt.CurrentItem.ID == "probe-item" && evt.ItemStatus == "ProbingPort" {
+			probingEventSeen = true
+		}
+	})
+
+	if err != nil {
+		t.Fatalf("Engine start failed: %v", err)
+	}
+	if !probingEventSeen {
+		t.Errorf("Expected ProbingPort event")
+	}
+}
+
+func TestTC_QUE_09_TCPPortProbe_FailureContinuesWithWarning(t *testing.T) {
+	listener, _ := net.Listen("tcp", "127.0.0.1:0")
+	port := listener.Addr().(*net.TCPAddr).Port
+	_ = listener.Close() // Port closed -> probe will time out
+
+	mock := &MockSpawner{}
+	engine := NewEngine(mock)
+
+	profile := models.Profile{
+		Name: "ProbeFailProfile",
+		Items: []models.LaunchItem{
+			{
+				ID:                  "failing-probe",
+				Name:                "Closed Port",
+				Path:                "/bin/echo",
+				TCPPortProbe:        port,
+				ProbeTimeoutSeconds: 0.1, // Fast timeout
+				DelaySeconds:        0.01,
+				Enabled:             true,
+			},
+			{
+				ID:           "subsequent-item",
+				Name:         "Subsequent Item",
+				Path:         "/bin/echo",
+				DelaySeconds: 0.01,
+				Enabled:      true,
+			},
+		},
+	}
+
+	failedEventRecorded := false
+	err := engine.Start(context.Background(), profile, false, func(evt ProgressEvent) {
+		if evt.CurrentItem.ID == "failing-probe" && evt.ItemStatus == "Failed" {
+			failedEventRecorded = true
+		}
+	})
+
+	if err != nil {
+		t.Fatalf("Engine should not fail fatally: %v", err)
+	}
+	if !failedEventRecorded {
+		t.Errorf("Expected Failed event on probe timeout")
+	}
+	// Verify subsequent item executed
+	if len(mock.spawnedItems) != 2 || mock.spawnedItems[1] != "subsequent-item" {
+		t.Errorf("Expected subsequent item to execute after probe failure, spawned: %+v", mock.spawnedItems)
+	}
 }

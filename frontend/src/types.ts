@@ -9,6 +9,9 @@ export interface LaunchItem {
   delaySeconds: number;
   launchState: WindowState;
   enabled: boolean;
+  waitForExit?: boolean;
+  tcpPortProbe?: number;
+  probeTimeoutSeconds?: number;
 }
 
 export interface Profile {

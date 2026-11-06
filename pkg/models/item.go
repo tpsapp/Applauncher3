@@ -7,8 +7,10 @@ import (
 )
 
 var (
-	ErrEmptyPath     = errors.New("executable path cannot be empty")
-	ErrNegativeDelay = errors.New("delay seconds cannot be negative")
+	ErrEmptyPath         = errors.New("executable path cannot be empty")
+	ErrNegativeDelay     = errors.New("delay seconds cannot be negative")
+	ErrInvalidPort       = errors.New("TCP port probe must be between 1 and 65535")
+	ErrNegativeTimeout   = errors.New("probe timeout seconds cannot be negative")
 )
 
 type WindowState string
@@ -30,14 +32,17 @@ func GenerateUUIDv4() string {
 }
 
 type LaunchItem struct {
-	ID               string      `json:"id"`
-	Name             string      `json:"name"`
-	Path             string      `json:"path"`
-	Arguments        []string    `json:"arguments"`
-	WorkingDirectory string      `json:"workingDirectory"`
-	DelaySeconds     float64     `json:"delaySeconds"`
-	LaunchState      WindowState `json:"launchState"`
-	Enabled          bool        `json:"enabled"`
+	ID                  string      `json:"id"`
+	Name                string      `json:"name"`
+	Path                string      `json:"path"`
+	Arguments           []string    `json:"arguments"`
+	WorkingDirectory    string      `json:"workingDirectory"`
+	DelaySeconds        float64     `json:"delaySeconds"`
+	LaunchState         WindowState `json:"launchState"`
+	Enabled             bool        `json:"enabled"`
+	WaitForExit         bool        `json:"waitForExit,omitempty"`
+	TCPPortProbe        int         `json:"tcpPortProbe,omitempty"`
+	ProbeTimeoutSeconds float64     `json:"probeTimeoutSeconds,omitempty"`
 }
 
 func (item *LaunchItem) Validate() error {
@@ -49,6 +54,15 @@ func (item *LaunchItem) Validate() error {
 	}
 	if item.DelaySeconds < 0 {
 		return ErrNegativeDelay
+	}
+	if item.TCPPortProbe < 0 || item.TCPPortProbe > 65535 {
+		return ErrInvalidPort
+	}
+	if item.ProbeTimeoutSeconds < 0 {
+		return ErrNegativeTimeout
+	}
+	if item.TCPPortProbe > 0 && item.ProbeTimeoutSeconds == 0 {
+		item.ProbeTimeoutSeconds = 10.0
 	}
 	if item.LaunchState == "" {
 		item.LaunchState = WindowNormal

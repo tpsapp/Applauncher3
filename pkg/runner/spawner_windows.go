@@ -15,9 +15,9 @@ func NewOSSpawner() ProcessSpawner {
 	return &WindowsSpawner{}
 }
 
-func (s *WindowsSpawner) Spawn(item *models.LaunchItem) (int, error) {
+func (s *WindowsSpawner) Spawn(item *models.LaunchItem) (*SpawnResult, error) {
 	if err := checkWorkingDirectory(item.WorkingDirectory); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	cmd := exec.Command(item.Path, item.Arguments...)
@@ -45,8 +45,11 @@ func (s *WindowsSpawner) Spawn(item *models.LaunchItem) (int, error) {
 	cmd.Stderr = nil
 
 	if err := cmd.Start(); err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return cmd.Process.Pid, nil
+	return &SpawnResult{
+		PID:  cmd.Process.Pid,
+		Wait: cmd.Wait,
+	}, nil
 }

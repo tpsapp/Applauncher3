@@ -18,6 +18,9 @@
   let delaySeconds = $state(2.0);
   let launchState = $state<WindowState>('Normal');
   let enabled = $state(true);
+  let waitForExit = $state(false);
+  let tcpPortProbe = $state<number | undefined>(undefined);
+  let probeTimeoutSeconds = $state(10.0);
 
   $effect(() => {
     if (item) {
@@ -28,6 +31,9 @@
       delaySeconds = item.delaySeconds ?? 2.0;
       launchState = item.launchState || 'Normal';
       enabled = item.enabled ?? true;
+      waitForExit = item.waitForExit ?? false;
+      tcpPortProbe = item.tcpPortProbe || undefined;
+      probeTimeoutSeconds = item.probeTimeoutSeconds ?? 10.0;
     } else {
       name = '';
       path = '';
@@ -36,6 +42,9 @@
       delaySeconds = 2.0;
       launchState = 'Normal';
       enabled = true;
+      waitForExit = false;
+      tcpPortProbe = undefined;
+      probeTimeoutSeconds = 10.0;
     }
   });
 
@@ -72,6 +81,8 @@
       ? args.match(/(?:[^\s"]+|"[^"]*")+/g)?.map(a => a.replace(/^"|"$/g, '')) || []
       : [];
 
+    const parsedPort = tcpPortProbe && tcpPortProbe > 0 ? Math.min(65535, Math.max(1, parseInt(tcpPortProbe.toString(), 10))) : undefined;
+
     const result: LaunchItem = {
       id: item?.id || '',
       name: name.trim() || path.split('/').pop()?.replace(/\.[^/.]+$/, '') || 'Application',
@@ -81,6 +92,9 @@
       delaySeconds: Math.max(0, parseFloat(delaySeconds.toString()) || 0),
       launchState,
       enabled,
+      waitForExit,
+      tcpPortProbe: parsedPort,
+      probeTimeoutSeconds: parsedPort ? Math.max(0.5, parseFloat(probeTimeoutSeconds.toString()) || 10) : undefined,
     };
 
     onSave(result);
@@ -197,6 +211,50 @@
               <option value="Minimized">Minimized</option>
               <option value="Hidden">Hidden</option>
             </select>
+          </div>
+        </div>
+
+        <!-- Advanced Launch Conditions -->
+        <div class="p-3 bg-zinc-950/60 border border-zinc-800/80 rounded-xl space-y-3">
+          <span class="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block">Advanced Launch Conditions (Optional)</span>
+
+          <!-- Wait for exit toggle -->
+          <label class="flex items-center justify-between cursor-pointer">
+            <div>
+              <span class="font-semibold text-zinc-200 block text-xs">Wait for Process Exit</span>
+              <span class="text-zinc-500 text-[10px]">Block queue execution until this application terminates</span>
+            </div>
+            <input type="checkbox" bind:checked={waitForExit} class="w-4 h-4 accent-indigo-500 rounded" />
+          </label>
+
+          <!-- TCP Port health check probe -->
+          <div class="pt-2 border-t border-zinc-800/60 grid grid-cols-2 gap-3">
+            <div>
+              <label for="item-probe" class="block font-semibold text-zinc-300 text-[11px] mb-1">TCP Health Port</label>
+              <input
+                id="item-probe"
+                type="number"
+                min="1"
+                max="65535"
+                bind:value={tcpPortProbe}
+                placeholder="e.g. 8080"
+                class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-100 font-mono text-xs focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label for="item-probetimeout" class="block font-semibold text-zinc-300 text-[11px] mb-1">Probe Timeout</label>
+              <input
+                id="item-probetimeout"
+                type="number"
+                min="1"
+                max="120"
+                step="1"
+                bind:value={probeTimeoutSeconds}
+                placeholder="10s"
+                disabled={!tcpPortProbe}
+                class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-100 font-mono text-xs disabled:opacity-40 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
           </div>
         </div>
 

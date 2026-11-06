@@ -71,6 +71,16 @@
         <span class="px-2 py-0.5 rounded-full text-[10px] font-mono border {statusBadgeClass()}">
           {status || (item.enabled ? 'Pending' : 'Disabled')}
         </span>
+        {#if item.waitForExit}
+          <span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono" title="Waits for process exit before continuing">
+            Blocking
+          </span>
+        {/if}
+        {#if item.tcpPortProbe}
+          <span class="px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono" title="Probes TCP port {item.tcpPortProbe}">
+            TCP :{item.tcpPortProbe}
+          </span>
+        {/if}
         {#if errorMessage}
           <span class="text-xs text-rose-400 font-mono truncate" title={errorMessage}>
             ⚠️ {errorMessage}
