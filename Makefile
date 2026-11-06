@@ -1,9 +1,12 @@
-.PHONY: all build build-frontend test test-race clean dev
+.PHONY: all build build-frontend icons test test-race clean dev
 
 BINARY_NAME=applauncher3
 OUTPUT_DIR=bin
 
 all: build-frontend build
+
+icons:
+	python3 scripts/generate_icons.py
 
 build-frontend:
 	cd frontend && npm run build

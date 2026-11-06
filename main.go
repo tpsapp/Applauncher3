@@ -17,6 +17,9 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed build/appicon.png
+var appIcon []byte
+
 func main() {
 	opts, err := cli.ParseArgs(os.Args[1:])
 	if err != nil {
@@ -56,8 +59,9 @@ func main() {
 			app,
 		},
 		Linux: &linux.Options{
-			Icon:                nil,
+			Icon:                appIcon,
 			WindowIsTranslucent: false,
+			ProgramName:         "applauncher3",
 		},
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,

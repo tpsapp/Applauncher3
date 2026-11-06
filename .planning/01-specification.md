@@ -191,3 +191,91 @@ Configuration is validated against an embedded JSON schema.
 
 **Next Logical Skill in Progression:** `architecture-spikes` (To implement and validate the cross-platform detached process spawner proof-of-concept harness before frontend wiring).
 
+---
+
+## 6. Feature Specification: Application Branding & Window Icon (🚀)
+
+### 6.1 Executive Scope & Non-Goals
+* **Summary:** AppLauncher3 uses the 🚀 rocket emblem throughout its user interface header (`Header.svelte`) and documentation (`README.md`). Currently, `linux.Options.Icon` is set to `nil`, resulting in unbranded window title bars and taskbar icons in Linux desktop environments (KDE Plasma, GNOME, XFCE). This feature establishes a unified, cross-platform application branding asset pipeline to provide consistent 🚀 iconography across Linux window frames, Windows executable manifests, and webview favicons.
+* **In-Scope Boundaries:**
+  * **Visual Design Alignment:** Master high-resolution (512x512) branding badge featuring a rounded squircle with the exact gradient (`indigo-600` `#4f46e5` via `indigo-500` `#6366f1` to `cyan-400` `#22d3ee`) and centered 🚀 rocket emblem matching `Header.svelte`.
+  * **Linux GTK Window Icon:** Embed PNG asset directly into the Go binary (`//go:embed`) and bind to `linux.Options.Icon` for `GdkPixbufLoader` / `gtk_window_set_icon`.
+  * **Windows Executable & Window Icon:** Multi-resolution `.ico` containing 16x16, 32x32, 48x48, 64x64, 128x128, and 256x256 mipmaps placed in `build/windows/icon.ico`.
+  * **Frontend & Webview Favicon:** Synchronize `frontend/public/icon.png` and update `frontend/index.html` with `<link rel="icon" ...>`.
+  * **Asset Pipeline Generator:** Repeatable Python/Pillow/ImageMagick generator script to reproduce or re-render icon assets from clean vector/source parameters.
+* **Explicit Non-Goals:**
+  * Dynamic real-time runtime state badges on the window icon (e.g., overlaying a green checkmark or progress spinner on the taskbar icon).
+  * Animated taskbar icons.
+
+### 6.2 Technical Architecture Specification
+
+```mermaid
+graph TD
+    subgraph Generator [Asset Build Pipeline]
+        Script[Python/Pillow Branding Generator]
+        SVG[Vector Squircle & Gradient + Rocket Emblem]
+        MasterPNG[512x512 Master PNG: build/appicon.png]
+        WinICO[Multi-res ICO: build/windows/icon.ico]
+        WebFavicon[Webview Favicon: frontend/public/icon.png]
+        Script --> MasterPNG
+        Script --> WinICO
+        Script --> WebFavicon
+    end
+
+    subgraph Go Runtime [Wails v2 Desktop App]
+        Embed[//go:embed build/appicon.png]
+        LinuxOpt[linux.Options.Icon = appIcon]
+        WinOpt[windows.Options.DisableWindowIcon = false]
+        Embed --> LinuxOpt
+    end
+
+    subgraph OS Display [Desktop Surfaces]
+        GTK[Linux Titlebar & Taskbar Dock: gtk_window_set_icon]
+        WinTaskbar[Windows Taskbar & Explorer]
+        Webview[WebKit2GTK Favicon / Dev Server]
+        LinuxOpt --> GTK
+        WinICO --> WinTaskbar
+        WebFavicon --> Webview
+    end
+```
+
+* **Color & Dimension Token Specification:**
+  * Squircle Dimensions: $512 \times 512\text{px}$ canvas, outer border radius $r = 115\text{px}$.
+  * Gradient Vectors: Diagonal $(0, 0) \to (512, 512)$ transitioning from `#4f46e5` (indigo-600) to `#6366f1` (indigo-500) to `#22d3ee` (cyan-400).
+  * Subtle Ambient Shadow: $15\text{px}$ blur, $10\text{px}$ offset, opacity $25\%$ (`#4338ca`).
+  * Rocket Emblem: Scaled to fit comfortably within the squircle bounds ($60\%$ of badge dimension, centered with optical balancing).
+
+### 6.3 Work Breakdown Structure (WBS)
+* **Phase 1: Asset Generation:**
+  * Create `scripts/generate_icons.py` utilizing Pillow and vector/font primitives to generate master `build/appicon.png` (512x512) and multi-resolution `build/windows/icon.ico`.
+  * Export web-optimized favicon to `frontend/public/icon.png`.
+* **Phase 2: Go Backend & Linux Integration:**
+  * Embed `build/appicon.png` into Go runtime via `embed.FS` or `//go:embed`.
+  * Pass embedded byte slice to `linux.Options.Icon` in `main.go`.
+* **Phase 3: Frontend & HTML Integration:**
+  * Add `<link rel="icon" type="image/png" href="/icon.png" />` to `frontend/index.html`.
+* **Phase 4: Packaging & Verification:**
+  * Build frontend assets and recompile production binary with `-tags "production,webkit2_41"`.
+  * Verify binary execution, GTK window icon loading, and zero CGO/GdkPixbuf runtime warnings.
+
+### 6.4 Risk Matrix
+
+| Risk / Failure Mode | Likelihood | Impact | Architectural Mitigation Strategy |
+| :--- | :--- | :--- | :--- |
+| **GdkPixbufLoader Decoding Failure** | Low | High | Ensure PNG is standard RGBA 8-bit non-interlaced; validate pixbuf loader decode before binding. |
+| **Downscaling Blurriness on Small Docks (16px / 24px)** | Medium | Medium | Generate multi-resolution mipmaps and downsample with Lanczos resampling to preserve crisp contrast. |
+| **Binary Bloat from Embedded Images** | Very Low | Low | Fully optimized PNG is under 50 KB, negligible footprint for a 7 MB desktop executable. |
+
+### 6.5 Phase 1 Execution Checklist
+- [ ] Create `scripts/generate_icons.py` to produce `build/appicon.png` (512x512) and `build/windows/icon.ico`.
+- [ ] Generate assets into `build/appicon.png`, `build/windows/icon.ico`, and `frontend/public/icon.png`.
+- [ ] Update `frontend/index.html` with `<link rel="icon" type="image/png" href="/icon.png" />`.
+- [ ] Update `main.go` with embedded `appIcon []byte` and assign to `linux.Options.Icon`.
+- [ ] Rebuild frontend and compile desktop binary (`make all`).
+- [ ] Verify test suite passes with zero regressions (`make test-race`).
+
+---
+
+**Next Logical Skill in Progression:** `test-matrix-designer` (To formalize test matrix and verification criteria for application icon rendering and packaging integrity).
+
+

@@ -441,4 +441,98 @@ graph TD
 
 ---
 
+## Phase 6: Application Branding & Window Icon (🚀)
+
+### [TASK-13]: Master Asset Generation Pipeline
+
+- **Prerequisites:** Python 3 + Pillow environment (verified available: Pillow 13.0.0).
+- **Target Files:**
+  - Create: `scripts/generate_icons.py`
+  - Generate: `build/appicon.png`, `build/windows/icon.ico`, `frontend/public/icon.png`
+- **Scope & Objective:** Implement an automated asset generation script that renders the high-resolution ($512 \times 512\text{px}$) squircle badge with an indigo-to-cyan gradient and centered 🚀 rocket emblem. Export `build/appicon.png`, multi-resolution Windows `build/windows/icon.ico` (16, 32, 48, 64, 256px), and `frontend/public/icon.png`.
+- **Interface / Contract:**
+  ```python
+  # scripts/generate_icons.py
+  # Generates:
+  #   - build/appicon.png (512x512 RGBA PNG)
+  #   - build/windows/icon.ico (Multi-size ICO)
+  #   - frontend/public/icon.png (Web favicon)
+  ```
+- **Behavior & Edge Cases:**
+  - Uses vector squircle curve with anti-aliasing (supersampled 4x).
+  - Center-aligns the 🚀 rocket emblem with optical margin balance.
+  - Generates directories automatically if they do not exist.
+- **Verification & Acceptance Criteria:**
+  - [ ] `build/appicon.png` exists and is $512 \times 512$ 8-bit RGBA PNG (`file build/appicon.png`).
+  - [ ] `build/windows/icon.ico` exists and contains multi-resolution icons.
+  - [ ] `frontend/public/icon.png` exists.
+  - [ ] Execution verification command:
+    ```bash
+    python3 scripts/generate_icons.py
+    ```
+
+---
+
+### [TASK-14]: Go Window Icon Embedding & Linux Runtime Configuration
+
+- **Prerequisites:** [TASK-13] (`build/appicon.png` generated)
+- **Target Files:**
+  - Modify: `main.go`
+- **Scope & Objective:** Embed `build/appicon.png` into the compiled Go binary using `//go:embed` and pass the byte slice to `linux.Options.Icon`. Ensure `windows.Options.DisableWindowIcon` remains `false`.
+- **Interface / Contract:**
+  ```go
+  //go:embed build/appicon.png
+  var appIcon []byte
+
+  // In main() options.App:
+  Linux: &linux.Options{
+      Icon:                appIcon,
+      WindowIsTranslucent: false,
+      ProgramName:         "applauncher3",
+  },
+  ```
+- **Behavior & Edge Cases:**
+  - If `appIcon` has 0 bytes or is missing at compile-time, Go compiler halts build (`pattern build/appicon.png: no matching files found`).
+  - GTK window initialization loads pixbuf via `gtk_window_set_icon(window, pixbuf)`.
+- **Verification & Acceptance Criteria:**
+  - [ ] `main.go` compiles cleanly with `-tags "production,webkit2_41"`.
+  - [ ] Binary execution loads without GTK or GdkPixbuf runtime warnings.
+  - [ ] Execution verification command:
+    ```bash
+    go build -tags "production,webkit2_41" -o bin/applauncher3 main.go app.go
+    ```
+
+---
+
+### [TASK-15]: Frontend Favicon Linkage & Automated Icon Verification Suite
+
+- **Prerequisites:** [TASK-13], [TASK-14]
+- **Target Files:**
+  - Modify: `frontend/index.html`
+  - Create: `tests/icon_test.go`
+- **Scope & Objective:** Update the HTML head to reference the icon favicon. Author automated Go tests in `tests/icon_test.go` to assert magic bytes, dimensions, and non-zero embedded icon byte slice length.
+- **Interface / Contract:**
+  ```html
+  <!-- frontend/index.html -->
+  <link rel="icon" type="image/png" href="/icon.png" />
+  ```
+  ```go
+  // tests/icon_test.go
+  func TestEmbeddedWindowIcon_ValidPNG(t *testing.T)
+  func TestIconFiles_ExistAndDimensions(t *testing.T)
+  ```
+- **Behavior & Edge Cases:**
+  - `TestEmbeddedWindowIcon_ValidPNG`: Confirms PNG magic header `\x89PNG\r\n\x1a\n` and $512 \times 512$ dimensions.
+  - `TestIconFiles_ExistAndDimensions`: Confirms presence of all generated targets.
+- **Verification & Acceptance Criteria:**
+  - [ ] Tests in `tests/icon_test.go` pass under ThreadSanitizer.
+  - [ ] Frontend builds cleanly with `npm run build`.
+  - [ ] Execution verification command:
+    ```bash
+    go test -v -race tests/icon_test.go
+    make all
+    ```
+
+---
+
 **Next Logical Skill in Progression:** `post-mortem-auditor` (To audit the completed implementation deliverables against the specification, non-goals, and test matrices upon milestone completion).

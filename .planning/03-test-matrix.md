@@ -139,6 +139,30 @@ stateDiagram-v2
 
 ---
 
+### [VERIFY-08]: Application Branding & Window Icon Asset Pipeline
+- **Target Component:** `scripts/generate_icons.py`, `build/appicon.png`, `build/windows/icon.ico`, `frontend/public/icon.png`, `main.go`, `frontend/index.html`
+- **Classifications:** Unit, Asset Integrity, GdkPixbuf Compatibility, Cross-Platform Desktop Parity.
+
+#### Input Boundary & Asset Integrity Matrix
+| Test Case ID | Category | Target / State | Expected Behavior & Contract |
+| :--- | :--- | :--- | :--- |
+| **TC-ICO-01** | Happy Path | `build/appicon.png` | Valid PNG magic bytes `\x89PNG\r\n\x1a\n`, dimensions exactly $512 \times 512$, 8-bit RGBA color channel, non-zero file size (> 10 KB). |
+| **TC-ICO-02** | Happy Path | `build/windows/icon.ico` | Valid ICO magic bytes `\x00\x00\x01\x00`, contains minimum 5 mipmap layers ($16 \times 16$, $32 \times 32$, $48 \times 48$, $64 \times 64$, $256 \times 256$). |
+| **TC-ICO-03** | Happy Path | `frontend/public/icon.png` & `index.html` | Favicon asset exists in public folder; `index.html` contains `<link rel="icon" type="image/png" href="/icon.png" />`. |
+| **TC-ICO-04** | Integration | `main.go` Go embedding | `appIcon` byte slice embedded via `//go:embed`; passed into `linux.Options{ Icon: appIcon }`; length > 0; non-nil. |
+| **TC-ICO-05** | Compatibility | GdkPixbufLoader / GTK3 | Embedded bytes load into GdkPixbufLoader without chunk corruption, truncation, or color space errors. |
+| **TC-ICO-06** | Compile Guard | Missing asset file | Build fails fast at compile-time with `pattern build/appicon.png: no matching files found`, preventing unbranded or broken binary distribution. |
+
+#### Adverse & Fault Scenarios
+- **Scenario [A]: Corrupted or Zero-Length Asset**
+  - Trigger: Attempt to embed 0-byte or non-image file.
+  - Required Assertion: Unit test `TestEmbeddedWindowIcon_ValidPNG` detects invalid magic bytes or dimension mismatch and fails before binary distribution.
+- **Scenario [B]: Desktop Environment Scaling Stress**
+  - Trigger: Linux desktop environment requests downscaled icon (16px system tray or 24px taskbar).
+  - Required Assertion: High-contrast squircle gradient with centered 🚀 maintains distinct silhouette and optical clarity down to 16px.
+
+---
+
 ## 3. Environment & Compiler Build Matrix
 
 | Target OS | Toolchain / Compiler | Architecture | Build Command / Flags | Sanitizer & Check Pipeline |
