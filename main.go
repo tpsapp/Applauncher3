@@ -12,6 +12,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
 	"github.com/tpsapp/applauncher3/pkg/cli"
+	"github.com/tpsapp/applauncher3/pkg/tray"
 )
 
 //go:embed all:frontend/dist
@@ -39,6 +40,9 @@ func main() {
 	} else if cfg, err := app.configMgr.Load(); err == nil && cfg.Settings.StartMinimized {
 		startHidden = true
 	}
+
+	// Ensure Linux Wayland and desktop icon integration before GTK window creation
+	_ = tray.EnsureDesktopIntegration(appIcon)
 
 	err = wails.Run(&options.App{
 		Title:             "AppLauncher3",
