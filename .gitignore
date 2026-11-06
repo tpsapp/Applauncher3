@@ -1,0 +1,24 @@
+# Binaries and compiled outputs
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+applauncher3
+
+# Logs and transient states
+*.log
+launcher-debug.log
+config.json
+*.tmp.*
+*.corrupt.*
+
+# Frontend node and distribution
+frontend/node_modules/
+frontend/dist/
+frontend/.svelte-kit/
+
+# Temporary / OS
+.DS_Store
+Thumbs.db
+/tmp/

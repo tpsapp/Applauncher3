@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "applauncher3",
+  "outputfilename": "applauncher3",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Thomas Sapp"
+  },
+  "info": {
+    "companyName": "Sappsworld Programming",
+    "productName": "AppLauncher3",
+    "version": "3.0.0",
+    "copyright": "Copyright (C) 2026 Thomas Sapp / Sappsworld Programming",
+    "comments": "Lightweight Cross-Platform Application & Process Launcher"
+  }
+}
