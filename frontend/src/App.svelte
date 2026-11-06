@@ -166,6 +166,7 @@
       prof.items.push(saved);
     }
 
+    editingItem = null;
     isItemModalOpen = false;
     persistConfig();
   }
@@ -261,7 +262,10 @@
     item={editingItem}
     isOpen={isItemModalOpen}
     onSave={handleSaveItem}
-    onClose={() => (isItemModalOpen = false)}
+    onClose={() => {
+      isItemModalOpen = false;
+      editingItem = null;
+    }}
   />
 
   {#if config}

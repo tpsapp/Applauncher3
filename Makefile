@@ -19,10 +19,12 @@ build-windows: build-frontend
 test:
 	go test -v ./...
 	go test -v tests/e2e/e2e_test.go
+	cd frontend && npm test
 
 test-race:
 	go test -v -race -timeout 30s ./...
 	go test -v -race tests/e2e/e2e_test.go
+	cd frontend && npm test
 
 clean:
 	rm -rf $(OUTPUT_DIR) frontend/dist

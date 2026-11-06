@@ -17,7 +17,7 @@
   let debugLogging = $state(false);
 
   $effect(() => {
-    if (settings) {
+    if (isOpen && settings) {
       startMinimized = settings.startMinimized ?? false;
       closeToTray = settings.closeToTray ?? true;
       confirmOnCancel = settings.confirmOnCancel ?? true;

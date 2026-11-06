@@ -23,28 +23,30 @@
   let probeTimeoutSeconds = $state(10.0);
 
   $effect(() => {
-    if (item) {
-      name = item.name || '';
-      path = item.path || '';
-      args = (item.arguments || []).join(' ');
-      workingDirectory = item.workingDirectory || '';
-      delaySeconds = item.delaySeconds ?? 2.0;
-      launchState = item.launchState || 'Normal';
-      enabled = item.enabled ?? true;
-      waitForExit = item.waitForExit ?? false;
-      tcpPortProbe = item.tcpPortProbe || undefined;
-      probeTimeoutSeconds = item.probeTimeoutSeconds ?? 10.0;
-    } else {
-      name = '';
-      path = '';
-      args = '';
-      workingDirectory = '';
-      delaySeconds = 2.0;
-      launchState = 'Normal';
-      enabled = true;
-      waitForExit = false;
-      tcpPortProbe = undefined;
-      probeTimeoutSeconds = 10.0;
+    if (isOpen) {
+      if (item) {
+        name = item.name || '';
+        path = item.path || '';
+        args = (item.arguments || []).join(' ');
+        workingDirectory = item.workingDirectory || '';
+        delaySeconds = item.delaySeconds ?? 2.0;
+        launchState = item.launchState || 'Normal';
+        enabled = item.enabled ?? true;
+        waitForExit = item.waitForExit ?? false;
+        tcpPortProbe = item.tcpPortProbe || undefined;
+        probeTimeoutSeconds = item.probeTimeoutSeconds ?? 10.0;
+      } else {
+        name = '';
+        path = '';
+        args = '';
+        workingDirectory = '';
+        delaySeconds = 2.0;
+        launchState = 'Normal';
+        enabled = true;
+        waitForExit = false;
+        tcpPortProbe = undefined;
+        probeTimeoutSeconds = 10.0;
+      }
     }
   });
 
