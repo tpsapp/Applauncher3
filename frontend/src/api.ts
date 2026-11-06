@@ -1,5 +1,10 @@
 import type { LauncherConfig, ProgressEvent } from './types';
 
+export interface ItemMetadata {
+  name: string;
+  workingDirectory: string;
+}
+
 // Declare Wails runtime globals
 declare global {
   interface Window {
@@ -15,7 +20,7 @@ declare global {
           GetQueueState(): Promise<string>;
           SelectExecutableDialog(): Promise<string>;
           SelectDirectoryDialog(): Promise<string>;
-          InferItemMetadata(execPath: string): Promise<[string, string]>;
+          InferItemMetadata(execPath: string): Promise<ItemMetadata>;
         };
       };
     };
@@ -152,12 +157,17 @@ export const api = {
     return '/home/tpsapp/Documents';
   },
 
-  async inferMetadata(execPath: string): Promise<[string, string]> {
+  async inferMetadata(execPath: string): Promise<ItemMetadata> {
     if (window.go?.main?.App) {
       return await window.go.main.App.InferItemMetadata(execPath);
     }
     const base = execPath.split('/').pop() || '';
-    return [base.replace(/\.[^/.]+$/, ''), '/home/tpsapp'];
+    const lastSlash = execPath.lastIndexOf('/');
+    const dir = lastSlash > 0 ? execPath.substring(0, lastSlash) : '/';
+    return {
+      name: base.replace(/\.[^/.]+$/, ''),
+      workingDirectory: dir,
+    };
   },
 
   onProgress(callback: (event: ProgressEvent) => void): () => void {

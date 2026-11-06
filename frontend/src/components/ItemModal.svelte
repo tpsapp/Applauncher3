@@ -53,9 +53,11 @@
       const selected = await api.selectExecutable();
       if (selected) {
         path = selected;
-        const [inferredName, inferredDir] = await api.inferMetadata(selected);
-        if (!name) name = inferredName;
-        if (!workingDirectory) workingDirectory = inferredDir;
+        const meta = await api.inferMetadata(selected);
+        if (meta) {
+          if (!name) name = meta.name;
+          if (!workingDirectory) workingDirectory = meta.workingDirectory;
+        }
       }
     } catch (e) {
       console.error('File dialog error:', e);

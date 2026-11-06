@@ -201,14 +201,20 @@ func (a *App) SelectDirectoryDialog() (string, error) {
 	return runtime.OpenDirectoryDialog(a.ctx, options)
 }
 
+type ItemMetadata struct {
+	Name             string `json:"name"`
+	WorkingDirectory string `json:"workingDirectory"`
+}
+
 // InferItemMetadata returns friendly name and directory given an executable path.
-func (a *App) InferItemMetadata(execPath string) (name string, workingDir string) {
+func (a *App) InferItemMetadata(execPath string) ItemMetadata {
 	if execPath == "" {
-		return "", ""
+		return ItemMetadata{}
 	}
 	base := filepath.Base(execPath)
 	ext := filepath.Ext(base)
-	name = strings.TrimSuffix(base, ext)
-	workingDir = filepath.Dir(execPath)
-	return name, workingDir
+	return ItemMetadata{
+		Name:             strings.TrimSuffix(base, ext),
+		WorkingDirectory: filepath.Dir(execPath),
+	}
 }

@@ -9,6 +9,7 @@
   import ItemModal from './components/ItemModal.svelte';
   import SettingsModal from './components/SettingsModal.svelte';
   import ControlBar from './components/ControlBar.svelte';
+  import NewProfileModal from './components/NewProfileModal.svelte';
 
   let config = $state<LauncherConfig | null>(null);
   let activeProfileName = $state('Default');
@@ -21,6 +22,7 @@
   let isItemModalOpen = $state(false);
   let editingItem = $state<LaunchItem | null>(null);
   let isSettingsOpen = $state(false);
+  let isNewProfileOpen = $state(false);
 
   let activeProfile = $derived<Profile | null>(() => {
     if (!config) return null;
@@ -81,19 +83,17 @@
   }
 
   function handleCreateProfile() {
+    isNewProfileOpen = true;
+  }
+
+  function handleSaveNewProfile(name: string) {
     if (!config) return;
-    const name = prompt('Enter new profile name:');
-    if (!name || !name.trim()) return;
-    const trimmed = name.trim();
-    if (config.profiles.some(p => p.name === trimmed)) {
-      alert('A profile with that name already exists.');
-      return;
-    }
     config.profiles.push({
-      name: trimmed,
+      name,
       items: [],
     });
-    activeProfileName = trimmed;
+    activeProfileName = name;
+    isNewProfileOpen = false;
     persistConfig();
   }
 
@@ -270,6 +270,13 @@
       isOpen={isSettingsOpen}
       onSave={handleSaveSettings}
       onClose={() => (isSettingsOpen = false)}
+    />
+
+    <NewProfileModal
+      isOpen={isNewProfileOpen}
+      existingNames={config.profiles.map(p => p.name)}
+      onCreate={handleSaveNewProfile}
+      onClose={() => (isNewProfileOpen = false)}
     />
   {/if}
 </main>

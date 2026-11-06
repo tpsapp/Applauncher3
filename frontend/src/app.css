@@ -27,3 +27,30 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+/* Custom cross-platform dark dropdown styling */
+select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-color: #18181b !important; /* zinc-900 */
+  color: #f4f4f5 !important; /* zinc-100 */
+  border-color: #27272a !important; /* zinc-800 */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 1rem 1rem !important;
+  padding-right: 2.25rem !important;
+}
+
+select:focus {
+  border-color: #6366f1 !important; /* indigo-500 */
+  outline: none !important;
+  box-shadow: 0 0 0 1px #6366f1 !important;
+}
+
+option {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  padding: 0.5rem !important;
+}
