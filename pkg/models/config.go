@@ -1,6 +1,9 @@
 package models
 
-import "errors"
+import (
+	"errors"
+	"runtime"
+)
 
 var (
 	ErrDuplicateProfileName  = errors.New("duplicate profile name")
@@ -24,12 +27,17 @@ type LauncherConfig struct {
 }
 
 func NewDefaultConfig() *LauncherConfig {
+	closeToTray := true
+	if runtime.GOOS == "linux" {
+		closeToTray = false
+	}
+
 	return &LauncherConfig{
 		Version:       1,
 		ActiveProfile: "Default",
 		Settings: AppSettings{
 			StartMinimized:  false,
-			CloseToTray:     true,
+			CloseToTray:     closeToTray,
 			ConfirmOnCancel: true,
 			Theme:           "system",
 			DebugLogging:    false,

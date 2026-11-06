@@ -71,7 +71,29 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func (a *App) shutdown(ctx context.Context) {
+	if a.engine != nil {
+		a.engine.Cancel()
+	}
 	_ = logger.Close()
+}
+
+// beforeClose intercepts the window close event and checks CloseToTray preference.
+func (a *App) beforeClose(ctx context.Context) bool {
+	cfg, err := a.configMgr.Load()
+	if err != nil {
+		return false // Permit close
+	}
+
+	if cfg.Settings.CloseToTray {
+		logger.Info("Window close requested. Minimizing to background (CloseToTray=true)...")
+		if ctx != nil && ctx.Value("frontend") != nil {
+			runtime.WindowHide(ctx)
+		}
+		return true // Prevent window termination, keep background running
+	}
+
+	logger.Info("Window close requested. Exiting application immediately (CloseToTray=false)...")
+	return false // Permit window termination and app exit
 }
 
 // GetConfig returns the loaded configuration.

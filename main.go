@@ -33,6 +33,8 @@ func main() {
 	startHidden := false
 	if opts.StartMinimized {
 		startHidden = true
+	} else if cfg, err := app.configMgr.Load(); err == nil && cfg.Settings.StartMinimized {
+		startHidden = true
 	}
 
 	err = wails.Run(&options.App{
@@ -42,13 +44,14 @@ func main() {
 		MinWidth:          720,
 		MinHeight:         520,
 		StartHidden:       startHidden,
-		HideWindowOnClose: true,
+		HideWindowOnClose: false,
+		OnStartup:         app.startup,
+		OnShutdown:        app.shutdown,
+		OnBeforeClose:     app.beforeClose,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 24, G: 24, B: 27, A: 255},
-		OnStartup:        app.startup,
-		OnShutdown:       app.shutdown,
 		Bind: []interface{}{
 			app,
 		},

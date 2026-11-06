@@ -10,6 +10,7 @@
   import SettingsModal from './components/SettingsModal.svelte';
   import ControlBar from './components/ControlBar.svelte';
   import NewProfileModal from './components/NewProfileModal.svelte';
+  import { applyTheme, setupSystemThemeListener } from './theme';
 
   let config = $state<LauncherConfig | null>(null);
   let activeProfileName = $state('Default');
@@ -29,6 +30,11 @@
     return config.profiles.find(p => p.name === activeProfileName) || config.profiles[0] || null;
   });
 
+  $effect(() => {
+    const t = config?.settings?.theme || 'system';
+    applyTheme(t);
+  });
+
   onMount(async () => {
     try {
       config = await api.getConfig();
@@ -38,6 +44,8 @@
     } catch (e) {
       console.error('Failed to load initial config:', e);
     }
+
+    const unbindTheme = setupSystemThemeListener(() => config?.settings?.theme || 'system');
 
     // Register Wails backend event listeners
     const unbindProgress = api.onProgress((evt: ProgressEvent) => {
@@ -60,6 +68,7 @@
     return () => {
       unbindProgress();
       unbindCompleted();
+      unbindTheme();
     };
   });
 
@@ -215,6 +224,7 @@
     if (!config) return;
     config.settings = newSettings;
     isSettingsOpen = false;
+    applyTheme(newSettings.theme);
     persistConfig();
   }
 </script>

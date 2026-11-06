@@ -53,7 +53,7 @@
           <label class="flex items-center justify-between p-3 rounded-xl bg-zinc-950/60 border border-zinc-800/80 cursor-pointer">
             <div>
               <span class="font-semibold text-zinc-200 block">Close to System Tray</span>
-              <span class="text-zinc-500 text-[11px]">Keep launcher running in tray when window is closed</span>
+              <span class="text-zinc-500 text-[11px]">Keep launcher running in tray when window is closed (uncheck to exit immediately)</span>
             </div>
             <input type="checkbox" bind:checked={closeToTray} class="w-4 h-4 accent-indigo-500 rounded" />
           </label>
