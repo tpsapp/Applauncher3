@@ -256,7 +256,7 @@
                 bind:value={probeTimeoutSeconds}
                 placeholder="10s"
                 disabled={!tcpPortProbe}
-                class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-100 font-mono text-xs disabled:opacity-40 focus:outline-none focus:border-indigo-500"
+                class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-100 font-mono text-xs dark:disabled:opacity-40 focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>

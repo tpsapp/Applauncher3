@@ -65,4 +65,17 @@ describe('Theme Resolution & DOM Synchronization Tests', () => {
     assert.equal(mockClassList.has('dark'), true);
     assert.equal(mockClassList.has('light'), false);
   });
+
+  test('TC_THEME_04_LightModeCSSRulesCoverage', async () => {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const cssPath = path.resolve('src/app.css');
+    const css = await fs.readFile(cssPath, 'utf-8');
+
+    assert.ok(css.includes('html.light .bg-zinc-950\\/60'), 'CSS must style .bg-zinc-950/60 for option cards');
+    assert.ok(css.includes('html.light .border-zinc-800\\/80'), 'CSS must style .border-zinc-800/80');
+    assert.ok(css.includes('html.light input:disabled'), 'CSS must style disabled inputs cleanly');
+    assert.ok(css.includes('html.light select'), 'CSS must style dropdown select for light mode');
+    assert.ok(css.includes('html.light button.bg-zinc-800'), 'CSS must style secondary buttons with borders');
+  });
 });
