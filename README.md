@@ -13,7 +13,7 @@ A lightweight, modern, cross-platform desktop utility that automates the sequent
 
 ## 🌟 Overview
 
-**AppLauncher3** is a complete, modern reimagining of the classic Windows Forms utility (*AppLauncher2*). Re-engineered from the ground up for Linux, Windows, and macOS, it pairs a native Go backend with an ultra-responsive Svelte 5 frontend using Wails v2.
+**AppLauncher3** is a complete, modern reimagining of the classic Windows Forms utility ([*AppLauncher2*](https://github.com/tpsapp/Applauncher2)). Re-engineered from the ground up for Linux, Windows, and macOS, it pairs a native Go backend with an ultra-responsive Svelte 5 frontend using Wails v2.
 
 It produces a **7.0 MB self-contained binary** with zero external dependencies and idle memory usage of ~25 MB, avoiding the multi-hundred megabyte bloat of Electron.
 
