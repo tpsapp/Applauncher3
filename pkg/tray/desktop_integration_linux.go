@@ -25,7 +25,7 @@ func EnsureDesktopIntegrationWithBaseDir(baseDir string, execPath string, iconBy
 		}
 	}
 
-	// 1. Install hicolor 512x512 icon
+	// 1. Install hicolor 512x512 icon and root fallbacks
 	iconDir := filepath.Join(baseDir, "icons", "hicolor", "512x512", "apps")
 	if err := os.MkdirAll(iconDir, 0755); err != nil {
 		return fmt.Errorf("failed to create icon directory: %w", err)
@@ -42,7 +42,16 @@ func EnsureDesktopIntegrationWithBaseDir(baseDir string, execPath string, iconBy
 		}
 	}
 
-	// 2. Install desktop entry
+	// Also install to pixmaps directory as standard XDG desktop fallback
+	pixmapsDir := filepath.Join(baseDir, "pixmaps")
+	if err := os.MkdirAll(pixmapsDir, 0755); err == nil {
+		pixmapPath := filepath.Join(pixmapsDir, "applauncher3.png")
+		if existing, err := os.ReadFile(pixmapPath); err != nil || !bytes.Equal(existing, iconBytes) {
+			_ = os.WriteFile(pixmapPath, iconBytes, 0644)
+		}
+	}
+
+	// 2. Install desktop entry with absolute icon path and StartupNotify
 	appsDir := filepath.Join(baseDir, "applications")
 	if err := os.MkdirAll(appsDir, 0755); err != nil {
 		return fmt.Errorf("failed to create applications directory: %w", err)
@@ -54,9 +63,10 @@ func EnsureDesktopIntegrationWithBaseDir(baseDir string, execPath string, iconBy
 		"Name=AppLauncher3\n" +
 		"Comment=Sequential & Staggered Process Automator\n" +
 		"Exec=" + execPath + "\n" +
-		"Icon=applauncher3\n" +
+		"Icon=" + iconPath + "\n" +
 		"Terminal=false\n" +
 		"Categories=Utility;\n" +
+		"StartupNotify=true\n" +
 		"StartupWMClass=applauncher3\n"
 
 	writeDesktop := true
@@ -67,8 +77,10 @@ func EnsureDesktopIntegrationWithBaseDir(baseDir string, execPath string, iconBy
 		if err := os.WriteFile(desktopPath, []byte(desktopContent), 0644); err != nil {
 			return fmt.Errorf("failed to write desktop file: %w", err)
 		}
-		// Refresh system databases asynchronously
+		// Refresh system databases and icon caches asynchronously
 		go func() {
+			hicolorDir := filepath.Join(baseDir, "icons", "hicolor")
+			_ = exec.Command("gtk-update-icon-cache", "-f", "-t", hicolorDir).Run()
 			_ = exec.Command("update-desktop-database", appsDir).Run()
 			_ = exec.Command("kbuildsycoca6", "--noincremental").Run()
 		}()

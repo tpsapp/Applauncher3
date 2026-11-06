@@ -194,7 +194,19 @@ def main():
     img.save(public_ico, format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
     print(f"  ✓ Saved web favicon.ico: {public_ico}")
 
-    print("[4/4] Asset generation complete!")
+    # Generate Linux multi-resolution hicolor icon assets
+    print("[4/5] Generating Linux hicolor multi-resolution icon assets...")
+    icons_dir = os.path.join(BUILD_DIR, "icons")
+    hicolor_sizes = [16, 22, 24, 32, 48, 64, 128, 256, 512]
+    for s in hicolor_sizes:
+        size_dir = os.path.join(icons_dir, f"{s}x{s}")
+        os.makedirs(size_dir, exist_ok=True)
+        size_png = os.path.join(size_dir, "applauncher3.png")
+        resized = img.resize((s, s), Image.Resampling.LANCZOS)
+        resized.save(size_png, "PNG")
+    print(f"  ✓ Saved {len(hicolor_sizes)} hicolor icon sizes into {icons_dir}")
+
+    print("[5/5] Asset generation complete!")
 
 
 if __name__ == "__main__":

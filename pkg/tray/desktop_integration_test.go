@@ -40,14 +40,27 @@ func TestEnsureDesktopIntegration_CreatesIconAndDesktopFile(t *testing.T) {
 		t.Fatalf("Failed to read created desktop file: %v", err)
 	}
 	content := string(desktopData)
-	if !strings.Contains(content, "Icon=applauncher3") {
-		t.Errorf("Desktop file missing Icon=applauncher3: %s", content)
+	if !strings.Contains(content, "Icon="+iconPath) {
+		t.Errorf("Desktop file missing Icon=%s: %s", iconPath, content)
 	}
 	if !strings.Contains(content, "Exec="+execPath) {
 		t.Errorf("Desktop file missing Exec=%s: %s", execPath, content)
 	}
+	if !strings.Contains(content, "StartupNotify=true") {
+		t.Errorf("Desktop file missing StartupNotify=true: %s", content)
+	}
 	if !strings.Contains(content, "StartupWMClass=applauncher3") {
 		t.Errorf("Desktop file missing StartupWMClass=applauncher3: %s", content)
+	}
+
+	// 3. Verify pixmaps fallback file
+	pixmapPath := filepath.Join(tempDir, "pixmaps", "applauncher3.png")
+	pixmapData, err := os.ReadFile(pixmapPath)
+	if err != nil {
+		t.Fatalf("Failed to read created pixmap file: %v", err)
+	}
+	if !bytes.Equal(pixmapData, mockIconBytes) {
+		t.Errorf("Pixmap file content mismatch")
 	}
 }
 
