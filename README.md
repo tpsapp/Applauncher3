@@ -6,7 +6,7 @@ A lightweight, modern, cross-platform desktop utility that automates the sequent
 [![Wails](https://img.shields.io/badge/Wails-v2-DF1A2A?style=flat-square)](https://wails.io)
 [![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?style=flat-square&logo=svelte)](https://svelte.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
-[![Tests](https://img.shields.io/badge/Tests-31%20Passed-emerald?style=flat-square)](file://tests/e2e/e2e_test.go)
+[![Tests](https://img.shields.io/badge/Tests-44%20Passed-emerald?style=flat-square)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE.md)
 
 ---

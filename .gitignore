@@ -22,3 +22,6 @@ frontend/.svelte-kit/
 .DS_Store
 Thumbs.db
 /tmp/
+
+# Planning and internal agent deliverables
+.planning/
